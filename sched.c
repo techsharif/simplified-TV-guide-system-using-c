@@ -26,6 +26,7 @@ struct show{
 
 // System Channel store
 ChannelList SYSTEM_CHANNEL_LIST = NULL;
+ShowList SYSTEM_SHOW_LIST = NULL;
 
 
 // collect channel number
@@ -96,6 +97,44 @@ Channel findChannel(int num){
 Show addShow(Channel c, const char* name, const char* day,
              struct showTime start, struct showTime end){
 
+    // check if channel with this number is exists or not
+    if (findChannel(c->num)){
+        return NULL; // channel not created -- return NULL
+    }
+
+
+//
+//    Show show;
+//    Channel chan;
+//    int cnum;
+//    const char *cname;
+//    const char *name;
+//    const char *day;
+//    struct showTime start_, end_
+//            ;
+//    ShowList tmp;
+//
+//    while (list != NULL) {
+//        show = list->s;
+//        chan = showChannel(show);
+//        cnum = channelNum(chan);
+//        cname = channelName(chan);
+//        name = showName(show);
+//        day = showDay(show);
+//        start = showStart(show);
+//        end = showEnd(show);
+//
+//        printf("Channel %d (%s)\n", cnum, cname);
+//        printf("%-20s %3s %02d:%02d-%02d:%02d\n",
+//               name, day, start.hour, start.min, end.hour, end.min);
+//
+//        tmp = list;
+//        list = list->next;
+//        free(tmp); /* delete list node -- no longer needed */
+//    }
+
+
+
     Show s;
     return s;
 }
@@ -112,18 +151,16 @@ Channel showChannel(Show s){
 
 
 const char* showName(Show s){
-    return "sdf";
+    return s->name;
 }
 const char* showDay(Show s){
-    return "MON";
+    return s->day;
 }
 struct showTime showStart(Show s){
-    struct showTime ss;
-    return ss;
+    return s->start_time;
 }
 struct showTime showEnd(Show s){
-    struct showTime ss;
-    return ss;
+    return s->end_time;
 }
 
 
