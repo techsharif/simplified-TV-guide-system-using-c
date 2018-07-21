@@ -24,90 +24,75 @@ void readline(FILE *, char *, int);
 
 int main(int argc, char *argv[]) {
 
-//    Channel cc;
-
-//    printf("hello");
-//
-//    char name[] = "hello";
-    addChannel(1, "hello");
-    addChannel(2, "hello 1");
-    addChannel(3, "hello 2");
-    addChannel(4, "hello 3");
-    addChannel(4, "hello 3");
-//
+    /* I/O stream for commands -- could be file, could be stdin */
+    FILE *cmdstream = stdin;
+    int prompt = 1;
+    int status = 0;
+    char inStr[21]; /* generic input buffer */
     ChannelList cList = NULL;
-    cList = allChannels();
-    printChannels(cList);
-//
-//    /* I/O stream for commands -- could be file, could be stdin */
-//    FILE *cmdstream = stdin;
-//    int prompt = 1;
-//    int status = 0;
-//    char inStr[21]; /* generic input buffer */
-//    ChannelList cList = NULL;
-//
-//    while (1) { /* break out of loop when done */
-//
-//        if (prompt) {
-//            printf("\nCommand: ");
-//            fflush(stdout);
-//        }
-//        status = fscanf(cmdstream, "%20s", inStr);
-//        /* if end of command file, switch to stdin */
-//        if ((status == EOF) && !prompt) {
-//            fclose(cmdstream);
-//            cmdstream = stdin;
-//            prompt = 1;
-//            continue;
-//        }
-//
-//        /* Add Channel */
-//        if (strcmp(inStr, "c") == 0) {
-//            newChan(cmdstream);
-//        }
-//
-//            /* Add Show */
-//        else if (strcmp(inStr, "s") == 0) {
-//            newShow(cmdstream);
-//
-//        }
-//
-//            /* Find Shows */
-//        else if (strcmp(inStr, "f") == 0) {
-//            query(cmdstream);
-//        }
-//
-//            /* All Channels */
-//        else if (strcmp(inStr, "a") == 0) {
-//            cList = allChannels();
-//            printf("\n--- CHANNEL LIST ---\n");
-//            printChannels(cList);
-//        }
-//
-//            /* eXecute Command File */
-//        else if (strcmp(inStr, "x") == 0) {
-//            if (cmdstream == stdin) {
-//                cmdstream = openCmdFile();
-//                if (cmdstream == NULL) {
-//                    cmdstream = stdin;
-//                    prompt = 1;
-//                }
-//                else {
-//                    prompt = 0;
-//                }
-//            }
-//            else {
-//                printf("\n ERROR: Cannot use x within a command file.\n");
-//            }
-//        }
-//
-//            /* Quit */
-//        else if (strcmp(inStr, "q") == 0) {
-//            break;
-//        } else {
-//            printf("Unknown command: %s\n", inStr);
-//        }
-//    }
+
+    while (1) { /* break out of loop when done */
+
+        if (prompt) {
+            printf("\nCommand: ");
+            fflush(stdout);
+        }
+        status = fscanf(cmdstream, "%20s", inStr);
+        /* if end of command file, switch to stdin */
+        if ((status == EOF) && !prompt) {
+            fclose(cmdstream);
+            cmdstream = stdin;
+            prompt = 1;
+            continue;
+        }
+
+        /* Add Channel */
+        if (strcmp(inStr, "c") == 0) {
+            newChan(cmdstream);
+        }
+
+            /* Add Show */
+        else if (strcmp(inStr, "s") == 0) {
+            newShow(cmdstream);
+
+        }
+
+            /* Find Shows */
+        else if (strcmp(inStr, "f") == 0) {
+            query(cmdstream);
+        }
+
+            /* All Channels */
+        else if (strcmp(inStr, "a") == 0) {
+            cList = allChannels();
+            printf("\n--- CHANNEL LIST ---\n");
+            printChannels(cList);
+        }
+
+            /* eXecute Command File */
+        else if (strcmp(inStr, "x") == 0) {
+            if (cmdstream == stdin) {
+                cmdstream = openCmdFile();
+                if (cmdstream == NULL) {
+                    cmdstream = stdin;
+                    prompt = 1;
+                }
+                else {
+                    prompt = 0;
+                }
+            }
+            else {
+                printf("\n ERROR: Cannot use x within a command file.\n");
+            }
+        }
+
+            /* Quit */
+        else if (strcmp(inStr, "q") == 0) {
+            break;
+        } else {
+            printf("Unknown command: %s\n", inStr);
+        }
+    }
 
     return EXIT_SUCCESS;
 }

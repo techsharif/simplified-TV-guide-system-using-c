@@ -86,7 +86,7 @@ Channel findChannel(int num){
     while (list != NULL) {
         chan = list->c;
         if (channelNum(chan)==num)
-            return list->c;
+            return chan;
         list = list->next;
     }
     return NULL;
@@ -98,45 +98,59 @@ Show addShow(Channel c, const char* name, const char* day,
              struct showTime start, struct showTime end){
 
     // check if channel with this number is exists or not
-    if (findChannel(c->num)){
+    if (!findChannel(channelNum(c))){
         return NULL; // channel not created -- return NULL
     }
 
 
-//
-//    Show show;
-//    Channel chan;
-//    int cnum;
-//    const char *cname;
-//    const char *name;
-//    const char *day;
-//    struct showTime start_, end_
-//            ;
-//    ShowList tmp;
-//
-//    while (list != NULL) {
-//        show = list->s;
-//        chan = showChannel(show);
-//        cnum = channelNum(chan);
-//        cname = channelName(chan);
-//        name = showName(show);
-//        day = showDay(show);
-//        start = showStart(show);
-//        end = showEnd(show);
-//
-//        printf("Channel %d (%s)\n", cnum, cname);
-//        printf("%-20s %3s %02d:%02d-%02d:%02d\n",
-//               name, day, start.hour, start.min, end.hour, end.min);
-//
-//        tmp = list;
-//        list = list->next;
-//        free(tmp); /* delete list node -- no longer needed */
-//    }
+    // now we will search all the shows and will try to find if time conflicts
+    Show show;
+    const char *s_day;
+    struct showTime start_, end_;
+    ShowList list;
+    list = SYSTEM_SHOW_LIST;
+
+    // start checking
+    while (list != NULL) {
+        show = list->s;
+
+        s_day = showDay(show);
+        start_ = showStart(show);
+        end_ = showEnd(show);
+
+        int start_time = start_.hour * 60 + start_.min;
+        int end_time = end_.hour * 60 + end_.min ;
+        int s_start_time = start.hour * 60 + start.min;
+        int s_end_time = end.hour * 60 + end.min ;
+
+        // checking time conflicts
+        if ( strcmp(day,s_day)==0 && !((start_time>s_start_time && start_time>s_end_time) || (end_time<s_start_time && end_time<s_end_time)  )){
+            return NULL;
+        }
+
+        list = list->next;
+
+    }
 
 
 
-    Show s;
-    return s;
+
+
+    // Creating a new show instance
+    show = (Show) malloc(sizeof(struct show));
+    show->channel=c;
+    strcpy(show->name,name);
+    strcpy(show->day,day);
+    show->start_time = start;
+    show->end_time=end;
+
+    // add show to the system
+    ShowList sl;
+    sl = (ShowList) malloc(sizeof(struct showNode)); // create a show list item
+    sl->s = show; // add show
+    sl->next = SYSTEM_SHOW_LIST;
+    SYSTEM_SHOW_LIST = sl;
+    return show;
 }
 
 Channel showChannel(Show s){
@@ -174,6 +188,50 @@ struct showTime showEnd(Show s){
 
 ShowList findShows(Channel c, const char* name,
                    const char *day, struct showTime* time){
-    ShowList sl;
-    return sl;
+
+    ShowList result = NULL;
+
+    Show show;
+    const char *s_day;
+    struct showTime start_, end_;
+    ShowList list;
+    list = SYSTEM_SHOW_LIST;
+
+    // start checking
+    while (list != NULL) {
+        show = list->s;
+        list = list->next;
+
+        if (c!=NULL && channelNum(showChannel(show)) != channelNum(c))
+            continue;
+
+        if (name!=NULL && strcmp(showName(show),name)!=0)
+            continue;
+
+        if (day!=NULL && strcmp(showDay(show),day)!=0)
+            continue;
+
+        if (time!=NULL){
+            start_ = showStart(show);
+            end_ = showEnd(show);
+            int start_time = start_.hour * 60 + start_.min;
+            int end_time = end_.hour * 60 + start_.min;
+            int t_time = time->hour * 60 + time->min;
+            if (!(start_time <= t_time && end_time>=t_time)){
+                continue;
+            }
+        }
+
+        ShowList sl;
+        sl = (ShowList) malloc(sizeof(struct showNode)); // create a show list item
+        sl->s = show; // add show
+        sl->next = result;
+        result = sl;
+
+
+
+
+    }
+
+    return result;
 }
