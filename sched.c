@@ -57,12 +57,16 @@ Channel findChannel(int num) {
     while (list != NULL) { // start searching
         Channel temp_channel;
         temp_channel = list->c;
-        if (channelNum(temp_channel) == num) return temp_channel; // return matched channel
 
         ChannelList tmp;
         tmp = list;
         list = list->next;
         free(tmp); // delete list node -- no longer needed
+
+
+        if (channelNum(temp_channel) == num) return temp_channel; // return matched channel
+
+
     }
     return NULL;
 
@@ -235,13 +239,15 @@ Show addShow(Channel c, const char *name, const char *day,
         Show show;
         show = list->s;
 
-        if (isTimeConflicts(show,day, start, end))
-            return NULL; // return null if time conflicts
-
         ShowList temp;
         temp = list;
         list = list->next;
         free(temp); // delete list node
+
+        if (isTimeConflicts(show,day, start, end))
+            return NULL; // return null if time conflicts
+
+
 
     }
 
