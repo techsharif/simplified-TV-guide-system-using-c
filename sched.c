@@ -29,7 +29,24 @@ int channelNum(Channel c) { return c->num; } // get channel number
 /*
  * get channel list
  */
-ChannelList allChannels() { return CHANNEL_STORE_DATABASE; }
+ChannelList allChannels() {
+    ChannelList list = NULL;
+    list = CHANNEL_STORE_DATABASE;
+
+    ChannelList new_list = NULL;
+    while (list != NULL) { // start searching
+        Channel temp_channel;
+        temp_channel = list->c;
+        list = list->next;
+
+        ChannelList new_channel_list;
+        new_channel_list = (ChannelList) malloc(sizeof(struct channelNode)); // create a channel list item
+        new_channel_list->c = temp_channel; // add channel
+        new_channel_list->next = new_list;
+        new_list = new_channel_list;
+    }
+    return new_list;
+}
 
 
 /*
@@ -38,7 +55,7 @@ ChannelList allChannels() { return CHANNEL_STORE_DATABASE; }
 Channel create_channel(int num, const char *name) {
 
     Channel new_channel; // create channel instance
-    new_channel = (Channel) malloc(sizeof(struct channel)); // alocate memory
+    new_channel = (Channel) malloc(sizeof(struct channel)); // allocate memory
 
     strcpy(new_channel->name, name); // store the value of name not refer
     new_channel->num = num;
@@ -57,16 +74,8 @@ Channel findChannel(int num) {
     while (list != NULL) { // start searching
         Channel temp_channel;
         temp_channel = list->c;
-
-        ChannelList tmp;
-        tmp = list;
         list = list->next;
-        free(tmp); // delete list node -- no longer needed
-
-
         if (channelNum(temp_channel) == num) return temp_channel; // return matched channel
-
-
     }
     return NULL;
 
@@ -191,10 +200,8 @@ ShowList findShows(Channel c, const char *name,
         Show temp_show;
         temp_show = list->s;
 
-        ShowList temp; // create temp list
-        temp = list;
+
         list = list->next;
-        free(temp); // delete list node -- no longer needed
 
         if (c != NULL && showChannelNum(temp_show) != channelNum(c)) continue; // check channel matching
         if (name != NULL && strcmp(showName(temp_show), name) != 0) continue; // check name matching
@@ -227,6 +234,7 @@ Show createShow(Channel c, const char *name, const char *day,
 
 Show addShow(Channel c, const char *name, const char *day,
              struct showTime start, struct showTime end) {
+    printf("asdfaf");
 
     if (!findChannel(channelNum(c))) return NULL; // if channel not exists return NULL
 
@@ -239,10 +247,9 @@ Show addShow(Channel c, const char *name, const char *day,
         Show show;
         show = list->s;
 
-        ShowList temp;
-        temp = list;
+
         list = list->next;
-        free(temp); // delete list node
+
 
         if (isTimeConflicts(show,day, start, end))
             return NULL; // return null if time conflicts
