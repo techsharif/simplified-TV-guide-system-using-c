@@ -1,237 +1,261 @@
-//
-// Created by sharif on 7/18/18.
-//
-#include <stdio.h> // printf
-#include <stdlib.h> // NULL
-#include <string.h>  /* stcmp, strcpy */
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include "sched.h"
 
 
-// channel struct
-struct channel{
-    char name[100];
-    int num;
-};
-
-
-// show struct
-struct show{
-    Channel channel;
-    char name[100];
-    char day[4];
-    struct showTime start_time;
-    struct showTime end_time;
-};
-
-
-// System Channel store
-ChannelList SYSTEM_CHANNEL_LIST = NULL;
-ShowList SYSTEM_SHOW_LIST = NULL;
-
-
-// collect channel number
-int channelNum(Channel c){
-    return c->num;
-}
-
-// collect channel name
-const char* channelName(Channel c){
-    return c->name;
-}
-
-
-// collect all channel list
-ChannelList allChannels(){
-    return SYSTEM_CHANNEL_LIST;
-}
-
-
-/* create a new channel and add to schedule
- * if another channel with the same number exists,
- * cannot create -- return NULL
+/*
+ * init channel struct
  */
-Channel addChannel(int num, const char* name){
+struct channel {
+    char name[200]; // channel name
+    int num; // channel number
+};
 
-    // check if another channel with the same number exists,
-    if (findChannel(num)){
-        return NULL; // channel not created -- return NULL
-    }
 
-    // Creating a new channel instance with num and name
-    Channel c;
-    c = (Channel) malloc(sizeof(struct channel));
-    strcpy(c->name,name); // copy name
-    c->num = num;
+/*
+ * create a list database to store channel
+ */
+ChannelList CHANNEL_STORE_DATABASE = NULL;
 
-    // add channel to the system
-    ChannelList cl;
-    cl = (ChannelList) malloc(sizeof(struct channelNode)); // create a channel list item
-    cl->c = c; // add channel
-    cl->next = SYSTEM_CHANNEL_LIST;
-    SYSTEM_CHANNEL_LIST = cl;
+/*
+ * add getter methods
+ */
+const char *channelName(Channel c) { return c->name; } // get channel name
+int channelNum(Channel c) { return c->num; } // get channel number
 
-    return c;
+
+/*
+ * get channel list
+ */
+ChannelList allChannels() { return CHANNEL_STORE_DATABASE; }
+
+
+/*
+ * Create a new channel
+ */
+Channel create_channel(int num, const char *name) {
+
+    Channel new_channel; // create channel instance
+    new_channel = (Channel) malloc(sizeof(struct channel)); // alocate memory
+
+    strcpy(new_channel->name, name); // store the value of name not refer
+    new_channel->num = num;
+
+    return new_channel;
 }
 
 
 /*
- * find a channel, given its number
- * if no such channel, returns NULL
+ * get channel by channel number
  */
-Channel findChannel(int num){
+Channel findChannel(int num) {
     ChannelList list = NULL;
-    list = SYSTEM_CHANNEL_LIST;
-    Channel chan;
+    list = CHANNEL_STORE_DATABASE;
 
-    while (list != NULL) {
-        chan = list->c;
-        if (channelNum(chan)==num)
-            return chan;
+    while (list != NULL) { // start searching
+        Channel temp_channel;
+        temp_channel = list->c;
+        if (channelNum(temp_channel) == num) return temp_channel; // return matched channel
+
+        ChannelList tmp;
+        tmp = list;
         list = list->next;
+        free(tmp); // delete list node -- no longer needed
     }
     return NULL;
 
 }
 
+/* create  new channel and add to database
+ */
+Channel addChannel(int num, const char *name) {
 
-Show addShow(Channel c, const char* name, const char* day,
-             struct showTime start, struct showTime end){
 
-    // check if channel with this number is exists or not
-    if (!findChannel(channelNum(c))){
-        return NULL; // channel not created -- return NULL
+    if (findChannel(num)) { return NULL; } // return NULL, if another channel with the same number exists
+
+    // Creating a new channel instance with num and name
+    Channel new_channel;
+    new_channel = create_channel(num, name);
+
+    // add channel to the database
+    ChannelList new_channel_list;
+    new_channel_list = (ChannelList) malloc(sizeof(struct channelNode)); // create a channel list item
+    new_channel_list->c = new_channel; // add channel
+    new_channel_list->next = CHANNEL_STORE_DATABASE;
+    CHANNEL_STORE_DATABASE = new_channel_list;
+
+    return new_channel;
+}
+
+
+/*
+ * init show struct
+ */
+struct show {
+    Channel channel;
+    char name[200];
+    char day[5];
+    struct showTime start_time;
+    struct showTime end_time;
+};
+
+
+/*
+ * create a list database to store show
+ */
+ShowList SHOW_STORE_DATABASE = NULL;
+
+
+/*
+ * add getter methods
+ */
+Channel showChannel(Show s) { return s->channel; } // get show channel
+const char *showName(Show s) { return s->name; } // get show name
+const char *showDay(Show s) { return s->day; } // get show day
+struct showTime showStart(Show s) { return s->start_time; } // get show start time
+struct showTime showEnd(Show s) { return s->end_time; } // get show end time
+int showChannelNum(Show s) { return channelNum(showChannel(s)); } // get show channel number
+
+
+/*
+ * check in time
+ */
+int inTime(Show show, struct showTime *time) {
+    struct showTime temp_start, temp_end;
+    temp_start = showStart(show);
+    temp_end = showEnd(show);
+    int start_time = temp_start.hour * 60 + temp_start.min;
+    int end_time = temp_end.hour * 60 + temp_start.min;
+    int main_time = time->hour * 60 + time->min;
+    if (start_time > main_time || end_time < main_time) return 1;
+    return 0;
+}
+
+/*
+ * convert hour minute to minute
+ */
+int convertedTimeToMinute(struct showTime time) {
+    return time.hour * 60 + time.min;
+}
+
+
+/*
+ * check time conflicts
+ */
+
+int isTimeConflicts(Show show, const char *show_day, struct showTime show_start_time, struct showTime show_end_time) {
+
+    if (strcmp(show_day, showDay(show)) != 0) return 0;
+
+    struct showTime show_start, show_end;
+
+    show_start = showStart(show);
+    show_end = showEnd(show);
+
+    int show_start_in_munute = convertedTimeToMinute(show_start);
+    int show_end_in_munute = convertedTimeToMinute(show_end);
+    int show_start_time_in_munute = convertedTimeToMinute(show_start_time);
+    int show_end_time_in_munute = convertedTimeToMinute(show_end_time);
+
+    if ((show_start_in_munute > show_start_time_in_munute && show_start_in_munute > show_end_time_in_munute) ||
+        (show_end_in_munute < show_start_time_in_munute && show_end_in_munute < show_end_time_in_munute))
+        return 0;
+
+
+    return 1;
+}
+
+
+/*
+ * filter show list
+ */
+ShowList findShows(Channel c, const char *name,
+                   const char *day, struct showTime *time) {
+
+    // collect all show list
+    ShowList list;
+    list = SHOW_STORE_DATABASE;
+
+    ShowList shows = NULL; // will store result data
+
+
+    while (list != NULL) {
+
+        // collect top show
+        Show temp_show;
+        temp_show = list->s;
+
+        ShowList temp; // create temp list
+        temp = list;
+        list = list->next;
+        free(temp); // delete list node -- no longer needed
+
+        if (c != NULL && showChannelNum(temp_show) != channelNum(c)) continue; // check channel matching
+        if (name != NULL && strcmp(showName(temp_show), name) != 0) continue; // check name matching
+        if (day != NULL && strcmp(showDay(temp_show), day) != 0) continue; // check day matching
+        if (time != NULL && !inTime(temp_show, time)) continue; // check time matching
+
+        ShowList temp_show_list;
+        temp_show_list = (ShowList) malloc(sizeof(struct showNode)); // create a show list item
+        temp_show_list->s = temp_show; // add show
+        temp_show_list->next = shows;
+        shows = temp_show_list;
     }
 
+    return shows;
+}
 
-    // now we will search all the shows and will try to find if time conflicts
-    Show show;
-    const char *s_day;
-    struct showTime start_, end_;
+
+Show createShow(Channel c, const char *name, const char *day,
+                 struct showTime start, struct showTime end){
+    Show new_show;
+    new_show = (Show) malloc(sizeof(struct show));
+    new_show->channel = c;
+    strcpy(new_show->name, name);
+    strcpy(new_show->day, day);
+    new_show->start_time = start;
+    new_show->end_time = end;
+
+    return new_show;
+}
+
+Show addShow(Channel c, const char *name, const char *day,
+             struct showTime start, struct showTime end) {
+
+    if (!findChannel(channelNum(c))) return NULL; // if channel not exists return NULL
+
+    // collect all show
     ShowList list;
-    list = SYSTEM_SHOW_LIST;
+    list = SHOW_STORE_DATABASE;
 
     // start checking
     while (list != NULL) {
+        Show show;
         show = list->s;
 
-        s_day = showDay(show);
-        start_ = showStart(show);
-        end_ = showEnd(show);
+        if (isTimeConflicts(show,day, start, end))
+            return NULL; // return null if time conflicts
 
-        int start_time = start_.hour * 60 + start_.min;
-        int end_time = end_.hour * 60 + end_.min ;
-        int s_start_time = start.hour * 60 + start.min;
-        int s_end_time = end.hour * 60 + end.min ;
-
-        // checking time conflicts
-        if ( strcmp(day,s_day)==0 && !((start_time>s_start_time && start_time>s_end_time) || (end_time<s_start_time && end_time<s_end_time)  )){
-            return NULL;
-        }
-
+        ShowList temp;
+        temp = list;
         list = list->next;
+        free(temp); // delete list node
 
     }
 
+    // create a new show
+    Show new_show;
+    new_show = createShow(c,name,day,start,end);
 
-
-
-
-    // Creating a new show instance
-    show = (Show) malloc(sizeof(struct show));
-    show->channel=c;
-    strcpy(show->name,name);
-    strcpy(show->day,day);
-    show->start_time = start;
-    show->end_time=end;
-
-    // add show to the system
-    ShowList sl;
-    sl = (ShowList) malloc(sizeof(struct showNode)); // create a show list item
-    sl->s = show; // add show
-    sl->next = SYSTEM_SHOW_LIST;
-    SYSTEM_SHOW_LIST = sl;
-    return show;
-}
-
-Channel showChannel(Show s){
-    return s->channel;
+    // add show to the show database
+    ShowList new_show_list;
+    new_show_list = (ShowList) malloc(sizeof(struct showNode));
+    new_show_list->s = new_show; // add new show to database
+    new_show_list->next = SHOW_STORE_DATABASE;
+    SHOW_STORE_DATABASE = new_show_list;
+    return new_show;
 }
 
 
-
-
-
-
-
-
-const char* showName(Show s){
-    return s->name;
-}
-const char* showDay(Show s){
-    return s->day;
-}
-struct showTime showStart(Show s){
-    return s->start_time;
-}
-struct showTime showEnd(Show s){
-    return s->end_time;
-}
-
-
-
-
-
-
-
-
-
-
-ShowList findShows(Channel c, const char* name,
-                   const char *day, struct showTime* time){
-
-    ShowList result = NULL;
-
-    Show show;
-    const char *s_day;
-    struct showTime start_, end_;
-    ShowList list;
-    list = SYSTEM_SHOW_LIST;
-
-    // start checking
-    while (list != NULL) {
-        show = list->s;
-        list = list->next;
-
-        if (c!=NULL && channelNum(showChannel(show)) != channelNum(c))
-            continue;
-
-        if (name!=NULL && strcmp(showName(show),name)!=0)
-            continue;
-
-        if (day!=NULL && strcmp(showDay(show),day)!=0)
-            continue;
-
-        if (time!=NULL){
-            start_ = showStart(show);
-            end_ = showEnd(show);
-            int start_time = start_.hour * 60 + start_.min;
-            int end_time = end_.hour * 60 + start_.min;
-            int t_time = time->hour * 60 + time->min;
-            if (!(start_time <= t_time && end_time>=t_time)){
-                continue;
-            }
-        }
-
-        ShowList sl;
-        sl = (ShowList) malloc(sizeof(struct showNode)); // create a show list item
-        sl->s = show; // add show
-        sl->next = result;
-        result = sl;
-
-
-
-
-    }
-
-    return result;
-}
